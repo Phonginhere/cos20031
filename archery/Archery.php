@@ -1,3 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Archery</title>
+    
+    <link rel="stylesheet" href="Styles/style.css"> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 6px;
+            
+        }
+        table {
+            text-align: center;
+        }
+        th{
+            background-color: grey;
+        }
+        .end_table_list{
+            position: relative; 
+            gap: 25px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .end_table_list th{
+            background-color: lightgrey;
+        }
+        .tbl-point{
+            background-color: rgb(250, 71, 76);
+        }
+        
+    </style>
+</head>
+
+<?php include 'fragment/navbar.php'; ?>
+
+<header>
+<h1> Archer Round Page</h1>
+</header>
+
+<div class="home">
+    <div class="homebg"></div>
+
 <?php
 include_once "settings.php";
 $conn = @mysqli_connect(
@@ -9,12 +59,11 @@ $conn = @mysqli_connect(
 //Check the connection
 if(!$conn){
     echo "Connection to database failed";
+    header("location: Archer_form.php");
 
 } else 
-    echo("Connection established");
     if (isset($_POST["archer_id"])){
         //Transfer form data to variables
-        echo ("Input available\n");
         $archer_id = trim($_POST["archer_id"]);
         $competition_id = trim($_POST["competition"]);
     }   else {
@@ -26,11 +75,12 @@ if(!$conn){
     $archer_result = mysqli_query($conn, $archer_query);
     if (mysqli_num_rows($archer_result) == 0){
         echo "NO DATA";
+        header("location: Archer_form.php");
     }else
     if ($archer_result){
         while($row = mysqli_fetch_array($archer_result, MYSQLI_ASSOC)) {    
             $archer_name = $row['ArcherName'];
-            $dob = $row['ArcherDOB'];
+            $dob = $row['ArcherAge'];
             $gender = $row['ArcherGender'];
 
 
@@ -86,7 +136,9 @@ if(!$conn){
                     $possible_score = $row['PossibleScore'];  
                 }
             }
-            $select_round = "SELECT * FROM Round WHERE ArcherCategoryID = {$archer_category_id} AND DefinedRoundID = {$category_defined_round}";
+            $select_round = "SELECT * FROM Round 
+            WHERE ArcherCategoryID = {$archer_category_id} 
+            AND DefinedRoundID = {$category_defined_round}";
             $select_round_result = mysqli_query($conn, $select_round);
             if ($select_round_result){
                 while($row = mysqli_fetch_array($select_round_result, MYSQLI_ASSOC)) {
@@ -95,41 +147,176 @@ if(!$conn){
                 }
             }
 
-            $select_end = "SELECT * FROM `End` WHERE RoundID = {$category_division_id}";
-            $select_division_result = mysqli_query($conn, $select_division);
-            if ($select_division_result){
-                while($row = mysqli_fetch_array($select_division_result, MYSQLI_ASSOC)) {
-                    // $endID = $row['EndID'];
-
+//Contains information of Range Distance and Target Face of End
+            $range_id  = array();
+            $target_face_id_of_end = array();
+            $range_order = array();
+            $range_distance_id = array();
+            $select_range = "SELECT * FROM `Range` 
+            WHERE DefinedRoundID = {$category_defined_round}
+            ORDER BY RangeOrder;";
+            $select_range_result = mysqli_query($conn, $select_range);
+            if ($select_range_result){
+                while($row = mysqli_fetch_array($select_range_result, MYSQLI_ASSOC)) {
+                    array_push($range_id  , $row['RangeID']);
+                    array_push($target_face_id_of_end , $row['TargetFaceID']);
+                    array_push($range_order , $row['RangeOrder']);
+                    array_push($range_distance_id , $row['RangeDistanceID']);
                 }
             }    
-            echo "<br>--------------------------------<br>".
-            "Archer ID: {$archer_id}<br>".
-            "Archer Name: {$archer_name}<br>".
-            "Archer Gender: {$gender}<br>".
-            "Archer DOB: {$dob}<br>".
-            "&nbsp&nbsp&nbsp&nbsp&nbsp----------------------     <br>".
-            "Archer Category: {$archer_category_id}<br>".
-            "Category ID: {$category_info}<br>".
-            "Category Name: {$category_name}<br>".
-            "Division Name: {$division_name}<br>".
-            "Class Name: {$class_name}<br>".
-            "&nbsp&nbsp&nbsp&nbsp&nbsp----------------------     <br>".
-            "Round ID: {$round_id}<br>".
-            "Round Date: {$round_date}<br>".
-            "Round Name: {$round_name}<br>".
-            "Possible Score: {$possible_score}<br>".
-            "&nbsp&nbsp&nbsp&nbsp&nbsp----------------------     <br>".
-            
-            "--------------------------------<br>";
+
+            // $a = array();
+            // for ($i = 0; $i < 5; $i++) {
+            //     $a[$i] = "i = {$i}";
+            // }
+            // foreach ($a as $key => $value) {
+            //     echo "Key: $key, Value: $value<br>";
+            // }
+            $target_face = array();
+            $select_target_face = "SELECT * FROM TargetFace";
+            $select_target_face_result = mysqli_query($conn, $select_target_face);
+            if ($select_target_face_result){
+                while($row = mysqli_fetch_array($select_target_face_result, MYSQLI_ASSOC)) {
+                    $target_face[$row['TargetFaceID']] = $row['TargetFace'];
+                }
             }
-
-
-                // header("location: Archer_Round.php");
+            // foreach($target_face as $key => $value){
+            //     echo "<br>Target_Face_ID: $key, TargetFace: $value<br>";
+            // }
+            // foreach($target_face as $key => $value){
+            //     echo "<br>Target_Face_ID: $key, TargetFace: $value<br>";
+            // }
+            $target_distance = array();
+            $select_distance = "SELECT * FROM `RangeDistance`";
+            $select_distance_result = mysqli_query($conn, $select_distance);
+            if ($select_distance_result){
+                while($row = mysqli_fetch_array($select_distance_result, MYSQLI_ASSOC)) {
+                    $target_distance[$row['RangeDistanceID']] = $row['RangeDistance'];
+                }
             }
-         }
+            echo "
+            <table>
+            <tr>
+                <th>Archer ID</th>
+                <th>Archer Name</th>
+                <th>Archer Gender</th>
+                <th>Archer DOB</th>
+                <th>Category Name</th>
+                <th>Division Name</th>
+                <th>Class Name</th>
+                <th>Round Name</th>
+                <th>Possible Score</th>
+                <th>Round Date</th>
+            </tr>
+            <tr>
+                <td>{$archer_id}</td>
+                <td>{$archer_name}</td>
+                <td>{$gender}</td>
+                <td>{$dob}</td>
+                <td>{$category_name}</td>
+                <td>{$division_name}</td>
+                <td>{$class_name}</td>
+                <td>{$round_date}</td>
+                <td>{$possible_score}</td>
+                <td>{$round_date}</td>
+            </tr>
+            </table>
+            <br>
+            ";
+            $end_list = array();
+            $arrow_list = array();
+            $count = 0;
+            $total_round = array();
+            // array_push($end_list, $arrow_list);
+            $select_arrow = "SELECT
+                End.EndID,
+                Arrow.ArrowID,
+                Arrow.ArrowPoint
+            FROM
+                Round
+            JOIN
+                End ON Round.RoundID = End.RoundID
+            JOIN
+                Arrow ON End.EndID = Arrow.EndID
+            WHERE
+                Round.RoundID = {$round_id};";
+            // echo $select_arrow;
+            $select_arrow_result = mysqli_query($conn, $select_arrow);
+            if ($select_arrow_result){
+                echo "<div class= end_table_list>";
+                while($row = mysqli_fetch_array($select_arrow_result, MYSQLI_ASSOC)) {
+                    $idx = $count % 6;
+                    $arr_num = $idx +1;
+                    if ($count == 0){
+                        array_push($total_round, $row['ArrowPoint']);
+                        echo "<table>
+                        <tr>
+                            <th> End Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
+                            <th> Arrow Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
+                            <th class= tbl-point> Arrow Point</th>
+                        </tr>";
+                        echo "<tr>   
+                            <td rowspan='6'>{$row['EndID']}</td>
+                            <td>{$row['ArrowID']}</td>
+                            <td>{$row['ArrowPoint']}</td> 
+                            </tr>";
+                    }else if ($idx == 0 && $count != 0){
+                        array_push($total_round, $row['ArrowPoint']);
+                        $sum = get_total_point($total_round,$count,"end");
+                        echo "<tr>        
+                            <td colspan = '2'>TOTAL</td>
+                            <td>$sum</td>
+                            </tr>";
+                        echo "</table> <br>";
+                        echo "<table>
+                        <tr>
+                            <th> End Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
+                            <th> Arrow Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
+                            <th> Arrow Point</th>
+                        </tr>";
+                        echo "<tr>
+                            <td rowspan='6'>{$row['EndID']}</td>
+                            <td>{$arr_num}</td>
+                            <td>{$row['ArrowPoint']}</td>
+                            </tr>";
+                    }
+                    else{
+                        array_push($total_round, $row['ArrowPoint']);
+                        echo "<tr>        
+                            <td>{$arr_num}</td>
+                            <td>{$row['ArrowPoint']}</td>
+                            </tr>";
+                    }
+                    $count ++;
+                }
+                echo "</table>";
+                echo "</div>";
+            }
+        }
+    }
+}
+function get_total_point($point, $count, $type) {
+    if ($type == "round"){
+        return array_sum($point);
+    }
+    else if ($type == "end"){
+        $end_sum = 0;
+        for ($i = $count-1; $i >= $count-6; $i--) {
+            // echo "{$i} with $point[$i] <br>";
+            $end_sum += $point[$i];
+        }
+        return $end_sum;
+    }
+    else{
+        return 0;
+    }
+}    
 
 
+  
 ?>
 
+</div>
 
+<?php include 'fragment/footer.php'; ?>
+</html>
