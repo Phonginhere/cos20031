@@ -286,6 +286,13 @@ if(!$conn){
                             <td>{$arr_num}</td>
                             <td>{$row['ArrowPoint']}</td>
                             </tr>";
+                        if ($idx == 5 && $row['EndID'] == 24){       //Update Total score of last table
+                            $sum = get_total_point($total_round,$count,"end");
+                            echo "<tr>        
+                            <td colspan = '2'>TOTAL</td>
+                            <td>$sum</td>
+                            </tr>";
+                        }
                     }
                     $count ++;
                 }
@@ -295,6 +302,9 @@ if(!$conn){
         }
     }
 }
+$round_total_point = get_total_point($total_round,$count,"round");
+echo "<h1>Total point of all rounds: {$round_total_point}</h1>";
+
 function get_total_point($point, $count, $type) {
     if ($type == "round"){
         return array_sum($point);
