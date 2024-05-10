@@ -303,7 +303,7 @@ if(!$conn){
     }
 }
 $round_total_point = get_total_point($total_round,$count,"round");
-echo "<h1>Total point of all rounds: {$round_total_point}</h1>";
+echo "<br><h1>Total point of all rounds: {$round_total_point}</h1>";
 
 function get_total_point($point, $count, $type) {
     if ($type == "round"){
