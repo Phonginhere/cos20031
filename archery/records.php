@@ -7,14 +7,15 @@
   <meta name="description" content="Recorder">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel='stylesheet' type='text/css' href='records_style.css'>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
   
   
 </head>
 <body>
-<?php include 'fragment/navbar.php'; ?>
 <div class="wrapper">
-
+<?php include 'fragment/navbar.php'; ?>
   <form id="recorder" method="post" action="records.php"> 
   <h3>Which action do you prefer?</h3>
       <label><input  type="radio" name="action" value="1"/>Add an Archer.</label><br>
@@ -55,35 +56,86 @@
             $action = sanitise_input($_POST["action"]);
 
             switch ($action) {
-                case "1":
+                case "1";
+                // Retrieve previous values from $_POST if available
+                $archerNameValue = isset($_POST['archerName']) ? $_POST['archerName'] : '';
+                $archerAgeValue = isset($_POST['archerAge']) ? $_POST['archerAge'] : '';
+                $genderValue = isset($_POST['gender']) ? $_POST['gender'] : '';
+
                   echo "<p>
                   <form id=\"archerName\" method=\"post\" action=\"records.php\"> 
+
+                  <input hidden name=\"action\" value=\"1\"/>
+
                   <label>Information about Archer you want to register: </label>
                   <br>
+                  
                   <label for=\"archerName\">Name
                   <input type=\"text\" name=\"archerName\" id=\"archerName\" 
-                  placeholder=\"Tan Pham\" required
+                  required value=\"$archerNameValue\"
                   /></label>
 
                   <label for=\"archerAge\">Archer's Age
-                  <input type=\"number\" name=\"archerAge\" id=\"archerAge\" required
+                  <input type=\"number\" name=\"archerAge\" id=\"archerAge\" required 
+                  value=\"$archerAgeValue\"
                   /></label>
 
                   <label for=\"gender\">Gender
-                    <select name=\"gender\" id=\"gender\" required>
-                        <option value=\"\">Please select</option>
-                        <option value=\"Male\">Male</option>
-                        <option value=\"Female\">Female</option>
+                    <select name=\"gender\" id=\"gender\" required\">
+                      <option value=\"\" " . ($genderValue == '' ? 'selected' : '') . ">Please select</option>
+                      <option value=\"Male\" " . ($genderValue == 'Male' ? 'selected' : '') . ">Male</option>
+                      <option value=\"Female\" " . ($genderValue == 'Female' ? 'selected' : '') . ">Female</option>
                     </select>
                   </label>
                   </p>";
 
+                  
+                  //Code Below Is Used to Determine the Class
+                  if (!(empty($_POST["archerName"]) AND empty($_POST["archerAge"]) AND empty($_POST["gender"])))
+                  {
+                    // Get user input for age and gender
+                  $archerAge = $_POST['archerAge'];
+                  $gender = $_POST['gender'];
+
+                  // Determine age group based on user input
+                  if ($archerAge >= 70) {
+                    $ageGroup = '70+';
+                  } elseif ($archerAge >= 60) {
+                    $ageGroup = '60+';
+                  } elseif ($archerAge >= 50) {
+                    $ageGroup = '50+';
+                  } elseif ($archerAge >= 21) {
+                    $ageGroup = 'Open';
+                  } elseif ($archerAge < 14) {
+                    $ageGroup = 'Under 14';
+                  } elseif ($archerAge < 16) {
+                    $ageGroup = 'Under 16';
+                  } elseif ($archerAge < 18) {
+                    $ageGroup = 'Under 18';
+                  } elseif ($archerAge < 21) {
+                    $ageGroup = 'Under 21';
+                  }
+                  
+                  if ($ageGroup == 'Open') {
+                    $class = $gender . ' Open';
+                  } else {
+                    $class = $ageGroup . ' ' . $gender;
+                  }
+                  
                   echo "<p>
+                  Now please enter the Category for the Archer:
+                  <br>
                   <label for=\"category\">Category
                     <select name=\"category\" id=\"category\" required>
                         <option value=\"\">Please select</option>";
 
-                        $query = "SELECT * FROM `Category`";
+                        $query = "SELECT * 
+                                  FROM Category 
+                                  WHERE ClassID = (
+                                      SELECT ClassID 
+                                      FROM Class 
+                                      WHERE ClassName = '$class'
+                                  );";
                         $result = $conn->query($query);
 
                         while ($row = mysqli_fetch_assoc($result)) {
@@ -94,16 +146,17 @@
                   echo "
                     </select>
                   </label>
+                  </p>";
+                  }
 
-                  <input hidden name=\"action\" value=\"1\"/>
-                  <br>
-                  <br>
+
+                  echo "
                   <div> <input type=\"submit\" value=\"Apply\"/>
                   <input  type=\"reset\" value=\"Reset\"/> </div>
                   </form>
-                  </p>"; 
-                  
-                  if (!(empty($_POST["archerName"]) AND empty($_POST["archerAge"]) AND empty($_POST["gender"]) AND empty($_POST["category"])))
+                  "; 
+
+                  if (!(empty($_POST["archerName"])) AND !(empty($_POST["archerAge"])) AND !(empty($_POST["gender"])) AND !(empty($_POST["category"])))
                   {
                     $archerName = $_POST["archerName"];
                     $archerAge = $_POST["archerAge"];
@@ -129,9 +182,56 @@
                       ";
                     $result = $conn->multi_query($query);
 
-                    echo "<p>One Archer has been added to Archer and ArcherCategory table.</p>";
+                    //Free up the result after multi_query
+                    do {
+                      if ($result = $conn->store_result()) {
+                          $result->free(); // Free the result set
+                      }
+                    } while ($conn->more_results() && $conn->next_result());
+
+                    echo "<br>
+                    <p>One Archer has been added to Archer and ArcherCategory table.</p>";
+
+                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName
+                    FROM ArcherCategory AC
+                    JOIN Archer A ON AC.ArcherID = A.ArcherID
+                    JOIN Category C ON AC.CategoryID = C.CategoryID
+                    WHERE A.ArcherName = '$archerName' AND C.CategoryID = '$category';
+                    ";
+
+                    $result = $conn->query($query); 
+
+                    // Check if there are any rows returned
+                    // Check for errors
+                    if (!$result) {
+                      echo "Error: " . $conn->error;
+                    } else {
+                      // Check if there are any rows returned
+                      if ($result->num_rows > 0) {
+                          // Output data
+                          echo "<table>";
+                          echo "<tr>
+                                <th>ArcherCategoryID</th>
+                                <th>ArcherName</th>
+                                <th>CategoryName</th>
+                                </tr>";
+
+                          // Output data of each row
+                          while ($row = $result->fetch_assoc()) {
+                              echo "<tr>
+                                    <td>" . $row["ArcherCategoryID"] . "</td>
+                                    <td>" . $row["ArcherName"] . "</td>
+                                    <td>" . $row["CategoryName"] . "</td>
+                                    </tr>";
+                          }
+
+                          echo "</table>";
+                      } else {
+                          echo "No results found.";
+                      }
+                    }
+
                   }
-    
                 break;
 
               }
