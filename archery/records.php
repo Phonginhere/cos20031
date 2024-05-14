@@ -10,22 +10,23 @@
   <link rel='stylesheet' type='text/css' href='records_style.css'>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-  
-  
+  <script src="script.js"></script>
+
 </head>
 <body>
 <div class="wrapper">
 <?php include 'fragment/navbar.php'; ?>
-  <form id="recorder" method="post" action="records.php"> 
-  <h3>Which action do you prefer?</h3>
-      <label><input  type="radio" name="action" value="1"/>Add an Archer.</label><br>
-      <label><input  type="radio" name="action" value="2"/>Add a new round.</label><br>
-      <label><input  type="radio" name="action" value="3"/>Add a new competition.</label><br>
 
-      <br>
-      <div> <input  type="submit" value="Apply"/>
-      <input  type="reset" value="Reset"/> </div>
-  </form>
+<form id="recorder" method="post" action="records.php"> 
+<h3>Which action do you prefer?</h3>
+    <label><input  type="radio" name="action" value="1"/>Add an Archer.</label><br>
+    <label><input  type="radio" name="action" value="2"/>Add a new round.</label><br>
+    <label><input  type="radio" name="action" value="3"/>Add a new competition.</label><br>
+
+    <br>
+    <div> <input  type="submit" value="Apply"/>
+    <input  type="reset" value="Reset"/> </div>
+</form>
 
 
   <div class="main">
@@ -56,14 +57,14 @@
             $action = sanitise_input($_POST["action"]);
 
             switch ($action) {
-                case "1";
+                case "1":
                 // Retrieve previous values from $_POST if available
                 $archerNameValue = isset($_POST['archerName']) ? $_POST['archerName'] : '';
                 $archerAgeValue = isset($_POST['archerAge']) ? $_POST['archerAge'] : '';
                 $genderValue = isset($_POST['gender']) ? $_POST['gender'] : '';
 
                   echo "<p>
-                  <form id=\"archerName\" method=\"post\" action=\"records.php\"> 
+                  <form id=\"archerInfo\" method=\"post\" action=\"records.php\"> 
 
                   <input hidden name=\"action\" value=\"1\"/>
 
@@ -232,6 +233,244 @@
                     }
 
                   }
+                break;
+
+                case "2":
+                  // Retrieve previous values from $_POST if available
+                  $archerNameValue = isset($_POST['archerName']) ? $_POST['archerName'] : '';
+
+                  echo "<p>
+                  <form id=\"addRound\" method=\"post\" action=\"records.php\"> 
+
+                  <input hidden name=\"action\" value=\"2\"/>
+
+                  <label>Who will play this round? </label>
+                  <br>
+                  
+                  <label for=\"archerName\">Archer Name:
+                  <input type=\"text\" name=\"archerName\" id=\"archerName\" 
+                  required value=\"$archerNameValue\"
+                  /></label>
+
+                  </p>";
+
+                  if (!(empty($_POST["archerName"]))){
+                    $categoryValue = isset($_POST['category']) ? $_POST['category'] : '';
+                    $competitionValue = isset($_POST['competition']) ? $_POST['competition'] : '';
+
+
+
+                    $archerName = $_POST["archerName"];
+
+                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName, C.CategoryID
+                    FROM ArcherCategory AC
+                    JOIN Archer A ON AC.ArcherID = A.ArcherID
+                    JOIN Category C ON AC.CategoryID = C.CategoryID
+                    WHERE A.ArcherName LIKE '%$archerName%'";
+
+                    $result = $conn->query($query);
+
+                    if ($result->num_rows > 0) {
+                        
+                        echo "<table>";
+                        echo "<tr>
+                                <th>ArcherCategoryID</th>
+                                <th>ArcherName</th>
+                                <th>CategoryName</th>
+                              </tr>";
+
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<tr>
+                                <td>" . $row["ArcherCategoryID"] . "</td>
+                                <td>" . $row["ArcherName"] . "</td>
+                                <td>" . $row["CategoryName"] . "</td>
+                              </tr>";
+                    }
+                        echo "</table>";
+
+                        // Reset the internal pointer of the result set back to the beginning
+                        mysqli_data_seek($result, 0);
+
+                        echo "
+                        <p class=\"needMargin\">
+                        <label for=\"category\">According to the table, which category do you want?
+                          <select name=\"category\" id=\"category\" required>
+                              <option value=\"\">Please select</option>";
+
+                              while ($row = mysqli_fetch_assoc($result)) {
+                                $selected = ($row["CategoryID"] == $categoryValue) ? "selected" : ""; // Check if the option should be selected
+                                echo "<option value=\"" . $row["CategoryID"] . "\" $selected>" .  $row["CategoryName"] ."</option>";
+                              }
+                              
+                              #free up the memory, after using the result pointer
+                              mysqli_free_result($result);
+                        echo "
+                          </select>
+                        </label>
+                        
+                        <label for=\"competition\"> And from which competition do you prefer:
+                          <select name=\"competition\" id=\"competition\" required>
+                              <option value=\"\">Please select</option>";
+
+                              $query = "SELECT * 
+                                        FROM Competition;";
+                              $result = $conn->query($query);
+
+                              while ($row = mysqli_fetch_assoc($result)) {
+                                $selected = ($row["CompetitionID"] == $competitionValue) ? "selected" : ""; // Check if the option should be selected
+                                echo "<option value=\"" . $row["CompetitionID"] . "\" $selected>" .  $row["CompetitionName"] ."</option>";
+                              }
+                              #free up the memory, after using the result pointer
+                              mysqli_free_result($result);
+                        echo "
+                          </select>
+                        </label>
+                        </p>";
+
+                    } else {
+                        echo "No records found.";
+                    } 
+                  }
+
+                  if (!(empty($_POST["category"])) AND !(empty($_POST["competition"]))) {
+                    $definedRoundValue = isset($_POST['definedRound']) ? $_POST['definedRound'] : '';
+            
+                    $category = $_POST["category"];
+                    $competition = $_POST["competition"];
+                    
+                    echo "<p>These are the rounds that the archer can participate in, please make your choice:";
+
+                    $query = "SELECT DR.RoundName, C.CategoryName, CMP.CompetitionName, DR.DefinedRoundID 
+                    FROM DefinedRound DR
+                    JOIN Category C ON DR.DefinedRoundID = C.DefinedRoundID
+                    JOIN Competition CMP ON CMP.CompetitionID = DR.CompetitionID
+                    WHERE C.CategoryID = '$category'
+                    AND CMP.CompetitionID = '$competition';
+                    ";
+
+                    $result = $conn->query($query);
+
+                    if ($result->num_rows > 0) {
+                        
+                        echo "<table>";
+                        echo "<tr>
+                                <th>Round Name</th>
+                                <th>Category</th>
+                                <th>Competition</th>
+                              </tr>";
+
+                    while ($row = $result->fetch_assoc()) {
+                        echo "<tr>
+                                <td>" . $row["RoundName"] . "</td>
+                                <td>" . $row["CategoryName"] . "</td>
+                                <td>" . $row["CompetitionName"] . "</td>
+                              </tr>";
+                    }
+                        echo "</table>";
+                    } else {
+                         echo "There is no round available that fits these requirements.";
+                    }
+
+                    // Reset the internal pointer of the result set back to the beginning
+                    mysqli_data_seek($result, 0);
+                    
+                    if ($result === false) {
+                         echo "Error executing SQL query: " . $conn->error;
+                     } else {
+                         echo "<p>
+                         <label for=\"definedRound\" class=\"needMargin\">Which round does the archer participate in?
+                             <select name=\"definedRound\" id=\"definedRound\" required>
+                                 <option value=\"\">Please select</option>";
+                         
+                     while ($row = mysqli_fetch_assoc($result)) {
+                         $selected = ($row["DefinedRoundID"] == $definedRoundValue) ? "selected" : ""; // Check if the option should be selected
+                         echo "<option value=\"" . $row["DefinedRoundID"] . "\" $selected>" .  $row["RoundName"] ."</option>";
+                     }
+             
+                     #free up the memory, after using the result pointer
+                     mysqli_free_result($result);
+                     echo "</select>
+                         </label>
+                         </p>";
+                     }
+
+                    }
+
+                    if (!(empty($_POST["definedRound"]))) {
+                         $roundDateValue = isset($_POST['roundDate']) ? $_POST['roundDate'] : '';
+
+                         echo "<p>
+                         <label for=\"roundDate\">Date of the Round:
+                         <input type=\"date\" name=\"roundDate\" id=\"roundDate\" required 
+                         value=\"$roundDateValue\"
+                         /></label>
+                         </p>";
+
+
+                         if (!(empty($_POST["roundDate"]))) {
+                              $roundDate = $_POST["roundDate"];
+                              $definedRound = $_POST["definedRound"];
+
+                              echo $roundDate;
+                              echo $definedRound;
+                              echo $archerName;
+                              echo $category;
+
+                              $query = "
+                              SET
+                              @player_id =(
+                              SELECT
+                              ArcherID
+                              FROM
+                              Archer
+                              WHERE
+                              ArcherName LIKE '%$archerName%'
+                              LIMIT 1
+                              );
+
+                              SET
+                                   @archer_category =(
+                                   SELECT
+                                   ArcherCategoryID
+                                   FROM
+                                   ArcherCategory
+                                   WHERE
+                                   ArcherID = @player_id AND CategoryID = '$category'
+                                   LIMIT 1
+                              );
+
+                              INSERT INTO Round(DefinedRoundID, ArcherCategoryID, DATE)
+                              VALUES('$definedRound', @archer_category, '$roundDate');
+                              ";
+
+
+                              $result = $conn->multi_query($query);
+                              if ($result === false) {
+                                   echo "Error executing SQL query: " . $conn->error;
+                               } else {
+                                 //Free up the result after multi_query
+                              do {
+                                   if ($result = $conn->store_result()) {
+                                        $result->free(); // Free the result set
+                                   }
+                                   } while ($conn->more_results() && $conn->next_result());
+     
+                                   echo "A new round has been added";
+                                   }
+                               }
+                    }
+
+                  echo "
+                  <p>
+                  <div> <input type=\"submit\" value=\"Apply\"/>
+                  <input  type=\"reset\" value=\"Reset\"/> </div>
+                  </form>
+                  </p>"; 
+                  
+                break;
+
+                case "3":
+
                 break;
 
               }
