@@ -94,6 +94,9 @@
                   //Code Below Is Used to Determine the Class
                   if (!(empty($_POST["archerName"]) AND empty($_POST["archerAge"]) AND empty($_POST["gender"])))
                   {
+                    $categoryValue = isset($_POST['category']) ? $_POST['category'] : '';
+                    $competitionValue = isset($_POST['competition']) ? $_POST['competition'] : '';
+
                     // Get user input for age and gender
                   $archerAge = $_POST['archerAge'];
                   $gender = $_POST['gender'];
@@ -124,7 +127,7 @@
                   }
                   
                   echo "<p>
-                  Now please enter the Category for the Archer:
+                  Now please enter the Category and Competition the Archer wants to partake in:
                   <br>
                   <label for=\"category\">Category
                     <select name=\"category\" id=\"category\" required>
@@ -140,13 +143,33 @@
                         $result = $conn->query($query);
 
                         while ($row = mysqli_fetch_assoc($result)) {
-                          echo "<option value=\"" . $row["CategoryID"] . "\">" .  $row["CategoryName"] ."</option>";
+                         $selected = ($row["CategoryID"] == $categoryValue) ? "selected" : ""; // Check if the option should be selected
+                         echo "<option value=\"" . $row["CategoryID"] . "\" $selected>" .  $row["CategoryName"] ."</option>";
                         }
                         #free up the memory, after using the result pointer
                         mysqli_free_result($result);
                   echo "
                     </select>
                   </label>
+
+                  <label for=\"competition\"> Competition
+                    <select name=\"competition\" id=\"competition\" required>
+                        <option value=\"\">Please select</option>";
+
+                        $query = "SELECT * 
+                                  FROM Competition;";
+                        $result = $conn->query($query);
+
+                        while ($row = mysqli_fetch_assoc($result)) {
+                          $selected = ($row["CompetitionID"] == $competitionValue) ? "selected" : ""; // Check if the option should be selected
+                          echo "<option value=\"" . $row["CompetitionID"] . "\" $selected>" .  $row["CompetitionName"] ."</option>";
+                        }
+                        #free up the memory, after using the result pointer
+                        mysqli_free_result($result);
+                  echo "
+                    </select>
+                  </label>
+
                   </p>";
                   }
 
@@ -157,12 +180,14 @@
                   </form>
                   "; 
 
-                  if (!(empty($_POST["archerName"])) AND !(empty($_POST["archerAge"])) AND !(empty($_POST["gender"])) AND !(empty($_POST["category"])))
+                  if (!(empty($_POST["archerName"])) AND !(empty($_POST["archerAge"])) AND !(empty($_POST["gender"])) AND !(empty($_POST["category"])) AND !(empty($_POST["competition"])))
                   {
                     $archerName = $_POST["archerName"];
                     $archerAge = $_POST["archerAge"];
                     $gender = $_POST["gender"];
                     $category = $_POST["category"];
+                    $competition = $_POST["competition"];
+
                     
                     // Insert new player into Player Table 
                     $query = "INSERT INTO `Archer` (`ArcherID`, `ArcherName`, `ArcherAge`, `ArcherGender`) 
@@ -178,8 +203,8 @@
                       LIMIT 1
                       );
                   
-                      INSERT INTO ArcherCategory (ArcherID, CategoryID)
-                      VALUES (@player_id, '$category');
+                      INSERT INTO ArcherCategory (ArcherID, CategoryID, CompetitionID)
+                      VALUES (@player_id, '$category', '$competition');
                       ";
                     $result = $conn->multi_query($query);
 
@@ -193,11 +218,12 @@
                     echo "<br>
                     <p>One Archer has been added to Archer and ArcherCategory table.</p>";
 
-                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName
+                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName, CMP.CompetitionName
                     FROM ArcherCategory AC
                     JOIN Archer A ON AC.ArcherID = A.ArcherID
                     JOIN Category C ON AC.CategoryID = C.CategoryID
-                    WHERE A.ArcherName = '$archerName' AND C.CategoryID = '$category';
+                    JOIN Competition CMP ON AC.CompetitionID = CMP.CompetitionID
+                    WHERE A.ArcherName = '$archerName' AND C.CategoryID = '$category' AND CMP.CompetitionID = '$competition';
                     ";
 
                     $result = $conn->query($query); 
@@ -215,6 +241,7 @@
                                 <th>ArcherCategoryID</th>
                                 <th>ArcherName</th>
                                 <th>CategoryName</th>
+                                <th>CompetitionName</th>
                                 </tr>";
 
                           // Output data of each row
@@ -223,6 +250,7 @@
                                     <td>" . $row["ArcherCategoryID"] . "</td>
                                     <td>" . $row["ArcherName"] . "</td>
                                     <td>" . $row["CategoryName"] . "</td>
+                                    <td>" . $row["CompetitionName"] . "</td>
                                     </tr>";
                           }
 
@@ -255,17 +283,15 @@
                   </p>";
 
                   if (!(empty($_POST["archerName"]))){
-                    $categoryValue = isset($_POST['category']) ? $_POST['category'] : '';
-                    $competitionValue = isset($_POST['competition']) ? $_POST['competition'] : '';
-
-
+                    $archerCategoryValue = isset($_POST['archerCategory']) ? $_POST['archerCategory'] : '';
 
                     $archerName = $_POST["archerName"];
 
-                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName, C.CategoryID
+                    $query = "SELECT AC.ArcherCategoryID, A.ArcherName, C.CategoryName, C.CategoryID, CMP.CompetitionName
                     FROM ArcherCategory AC
                     JOIN Archer A ON AC.ArcherID = A.ArcherID
                     JOIN Category C ON AC.CategoryID = C.CategoryID
+                    JOIN Competition CMP ON AC.CompetitionID = CMP.CompetitionID
                     WHERE A.ArcherName LIKE '%$archerName%'";
 
                     $result = $conn->query($query);
@@ -277,6 +303,7 @@
                                 <th>ArcherCategoryID</th>
                                 <th>ArcherName</th>
                                 <th>CategoryName</th>
+                                <th>CompetitionName</th>
                               </tr>";
 
                     while ($row = $result->fetch_assoc()) {
@@ -284,6 +311,7 @@
                                 <td>" . $row["ArcherCategoryID"] . "</td>
                                 <td>" . $row["ArcherName"] . "</td>
                                 <td>" . $row["CategoryName"] . "</td>
+                                <td>" . $row["CompetitionName"] . "</td>
                               </tr>";
                     }
                         echo "</table>";
@@ -293,13 +321,13 @@
 
                         echo "
                         <p class=\"needMargin\">
-                        <label for=\"category\">According to the table, which category do you want?
-                          <select name=\"category\" id=\"category\" required>
+                        <label for=\"archerCategory\">According to the table, choose an ArcherCategory ID number:
+                          <select name=\"archerCategory\" id=\"archerCategory\" required>
                               <option value=\"\">Please select</option>";
 
                               while ($row = mysqli_fetch_assoc($result)) {
-                                $selected = ($row["CategoryID"] == $categoryValue) ? "selected" : ""; // Check if the option should be selected
-                                echo "<option value=\"" . $row["CategoryID"] . "\" $selected>" .  $row["CategoryName"] ."</option>";
+                                $selected = ($row["ArcherCategoryID"] == $archerCategoryValue) ? "selected" : ""; // Check if the option should be selected
+                                echo "<option value=\"" . $row["ArcherCategoryID"] . "\" $selected>" .  $row["ArcherCategoryID"] ."</option>";
                               }
                               
                               #free up the memory, after using the result pointer
@@ -308,23 +336,6 @@
                           </select>
                         </label>
                         
-                        <label for=\"competition\"> And from which competition do you prefer:
-                          <select name=\"competition\" id=\"competition\" required>
-                              <option value=\"\">Please select</option>";
-
-                              $query = "SELECT * 
-                                        FROM Competition;";
-                              $result = $conn->query($query);
-
-                              while ($row = mysqli_fetch_assoc($result)) {
-                                $selected = ($row["CompetitionID"] == $competitionValue) ? "selected" : ""; // Check if the option should be selected
-                                echo "<option value=\"" . $row["CompetitionID"] . "\" $selected>" .  $row["CompetitionName"] ."</option>";
-                              }
-                              #free up the memory, after using the result pointer
-                              mysqli_free_result($result);
-                        echo "
-                          </select>
-                        </label>
                         </p>";
 
                     } else {
@@ -332,45 +343,63 @@
                     } 
                   }
 
-                  if (!(empty($_POST["category"])) AND !(empty($_POST["competition"]))) {
+                  if (!(empty($_POST["archerCategory"]))) {
                     $definedRoundValue = isset($_POST['definedRound']) ? $_POST['definedRound'] : '';
             
-                    $category = $_POST["category"];
-                    $competition = $_POST["competition"];
+                    $archerCategory = $_POST["archerCategory"];
                     
                     echo "<p>These are the rounds that the archer can participate in, please make your choice:";
 
-                    $query = "SELECT DR.RoundName, C.CategoryName, CMP.CompetitionName, DR.DefinedRoundID 
-                    FROM DefinedRound DR
-                    JOIN Category C ON DR.DefinedRoundID = C.DefinedRoundID
-                    JOIN Competition CMP ON CMP.CompetitionID = DR.CompetitionID
-                    WHERE C.CategoryID = '$category'
-                    AND CMP.CompetitionID = '$competition';
-                    ";
+                    // First, retrieve the category ID
+                    $query = "SELECT CategoryID FROM ArcherCategory WHERE ArcherCategoryID = '$archerCategory' LIMIT 1";
+                    $result = $conn->query($query);
+
+                    if ($result) {
+                    $row = $result->fetch_assoc();
+                    $categoryID = $row['CategoryID'];
+                    }
+
+                    #free up the memory, after using the result pointer
+                    mysqli_free_result($result);
+
+                    // Now, use the retrieved category ID to fetch the rounds
+                    $query = "SELECT
+                                             RC.RoundCategoryID,
+                                             C.CategoryName,
+                                             D.RoundName,
+                                             RC.DefinedRoundID
+                                        FROM
+                                             RoundCategory RC
+                                        JOIN Category C ON
+                                             C.CategoryID = RC.CategoryID
+                                        JOIN DefinedRound D ON
+                                             D.DefinedRoundID = RC.DefinedRoundID
+                                        WHERE
+                                             RC.CategoryID = '$categoryID'";
 
                     $result = $conn->query($query);
 
+                    // Store result set
+
                     if ($result->num_rows > 0) {
-                        
-                        echo "<table>";
-                        echo "<tr>
-                                <th>Round Name</th>
-                                <th>Category</th>
-                                <th>Competition</th>
+                    
+                    echo "<table>";
+                    echo "<tr>
+                              <th>Round Name</th>
+                              <th>Category</th>
                               </tr>";
 
                     while ($row = $result->fetch_assoc()) {
-                        echo "<tr>
-                                <td>" . $row["RoundName"] . "</td>
-                                <td>" . $row["CategoryName"] . "</td>
-                                <td>" . $row["CompetitionName"] . "</td>
+                    echo "<tr>
+                              <td>" . $row["RoundName"] . "</td>
+                              <td>" . $row["CategoryName"] . "</td>
                               </tr>";
                     }
-                        echo "</table>";
+                    echo "</table>";
                     } else {
                          echo "There is no round available that fits these requirements.";
                     }
-
+                    
                     // Reset the internal pointer of the result set back to the beginning
                     mysqli_data_seek($result, 0);
                     
@@ -411,50 +440,20 @@
                               $roundDate = $_POST["roundDate"];
                               $definedRound = $_POST["definedRound"];
 
-                              echo $roundDate;
-                              echo $definedRound;
-                              echo $archerName;
-                              echo $category;
+                              // echo $roundDate;
+                              // echo $definedRound;
+                              // echo $archerCategory;
 
                               $query = "
-                              SET
-                              @player_id =(
-                              SELECT
-                              ArcherID
-                              FROM
-                              Archer
-                              WHERE
-                              ArcherName LIKE '%$archerName%'
-                              LIMIT 1
-                              );
-
-                              SET
-                                   @archer_category =(
-                                   SELECT
-                                   ArcherCategoryID
-                                   FROM
-                                   ArcherCategory
-                                   WHERE
-                                   ArcherID = @player_id AND CategoryID = '$category'
-                                   LIMIT 1
-                              );
-
                               INSERT INTO Round(DefinedRoundID, ArcherCategoryID, DATE)
-                              VALUES('$definedRound', @archer_category, '$roundDate');
+                              VALUES('$definedRound', $archerCategory, '$roundDate');
                               ";
 
 
-                              $result = $conn->multi_query($query);
+                              $result = $conn->query($query);
                               if ($result === false) {
                                    echo "Error executing SQL query: " . $conn->error;
-                               } else {
-                                 //Free up the result after multi_query
-                              do {
-                                   if ($result = $conn->store_result()) {
-                                        $result->free(); // Free the result set
-                                   }
-                                   } while ($conn->more_results() && $conn->next_result());
-     
+                               } else { 
                                    echo "A new round has been added";
                                    }
                                }
