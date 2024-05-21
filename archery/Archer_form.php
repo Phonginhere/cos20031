@@ -38,19 +38,6 @@
                     </select>
                 </p>
             </fieldset>
-
-
-            <p>
-                
-                <select id="mySelect">
-                    <option value="option1">Option 1</option>
-                    <option value="option2">Option 2</option>
-                    <option value="option3">Option 3</option>
-                </select>
-                
-                <div id="archerData"></div>
-                <!-- <script src = "test.js"></script> -->
-            </p>
         
             <input type= "submit" value="Proceed"/>
             <input type= "reset" value="Reset"/>
