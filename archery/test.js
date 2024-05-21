@@ -53,3 +53,4 @@ function fetchArcherData() {
     };
     xhr.send();
 }
+

@@ -12,14 +12,8 @@
         <li class="nav-item">
           <a class="nav-link" href="Archer_form.php">Archer</a>
         </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Recorder
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            <li><a class="dropdown-item" href="./records.php">Record Archer Point</a></li>
-            <li><a class="dropdown-item" href="#">Add new Archer</a></li>
-          </ul>
+        <li class="nav-item">
+          <a class="nav-link" href="records.php">Recorder</a>
         </li>
         <li class="nav-item dropdown">
           <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
