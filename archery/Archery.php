@@ -246,18 +246,19 @@ if(!$conn){
                 echo "<div class= end_table_list>";
                 while($row = mysqli_fetch_array($select_arrow_result, MYSQLI_ASSOC)) {
                     $idx = $count % 6;
-                    $arr_num = $idx +1;
+                    $arr_num = ($idx +1)%6;
+                    $
                     if ($count == 0){
                         array_push($total_round, $row['ArrowPoint']);
                         echo "<table>
                         <tr>
-                            <th> End Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
+                            <th> End Number</th>
                             <th> Arrow Number&nbsp&nbsp&nbsp&nbsp&nbsp</th>
                             <th class= tbl-point> Arrow Point</th>
                         </tr>";
                         echo "<tr>   
                             <td rowspan='6'>{$row['EndID']}</td>
-                            <td>{$row['ArrowID']}</td>
+                            <td>{$row['ArrowID']}{$idx}</td>
                             <td>{$row['ArrowPoint']}</td> 
                             </tr>";
                     }else if ($idx == 0 && $count != 0){
