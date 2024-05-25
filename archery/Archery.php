@@ -68,7 +68,7 @@ if(!$conn){
         $archer_id = trim($_POST["archer_id"]);
         $competition_id = trim($_POST["competition"]);
     }   else {
-        //header("location: Archer_form.php");
+        header("location: Archer_form.php");
     }
     
 // TEST ANY ARCHER IN SELECT from Archer    
@@ -113,8 +113,12 @@ if(!$conn){
             Archer.ArcherID = {$archer_id} AND
             ArcherCategory.CompetitionID = {$competition_id};";
             // echo $join_select;
-
+            
             $join_select_result = mysqli_query($conn, $join_select);
+            if (mysqli_num_rows($join_select_result) == 0){
+                echo "NO DATA";
+                header("location: Archer_form.php");
+            }
             if ($join_select_result){
                 while($row = mysqli_fetch_array($join_select_result, MYSQLI_ASSOC)) {
                     $archer_id = $row['ArcherID'];
