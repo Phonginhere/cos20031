@@ -339,7 +339,7 @@ if (!$conn) {
                     </p>";
 
                } else {
-                    echo "No records found.";
+                    echo "No records of this Archer found. Please register this archer through 'Add an Archer' first";
                } 
                }
 
