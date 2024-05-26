@@ -428,16 +428,7 @@ if (!$conn) {
                if (!(empty($_POST["definedRound"]))) {
                     $roundDateValue = isset($_POST['roundDate']) ? $_POST['roundDate'] : '';
 
-                    echo "<p>
-                    <label for=\"roundDate\">Date of the Round:
-                    <input type=\"date\" name=\"roundDate\" id=\"roundDate\" required 
-                    value=\"$roundDateValue\"
-                    /></label>
-                    </p>";
-
-
-                    if (!(empty($_POST["roundDate"]))) {
-                         $roundDate = $_POST["roundDate"];
+                         $roundDate = date('Y-m-d');
                          $definedRound = $_POST["definedRound"];
 
                          // echo $roundDate;
@@ -456,7 +447,7 @@ if (!$conn) {
                               } else { 
                               echo "A new round has been added for the selected Archer";
                               }
-                              }
+                              
                }
 
                echo "
